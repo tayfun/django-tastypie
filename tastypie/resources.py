@@ -978,7 +978,7 @@ class Resource(object):
         serialized = self.serialize(request, data, desired_format)
         return response_class(content=serialized, content_type=build_content_type(desired_format), **response_kwargs)
 
-    def is_valid(self, bundle, request=None):
+    def is_valid(self, bundle, request=None, **kwargs):
         """
         Handles checking if the data provided by the user is valid.
 
@@ -988,7 +988,7 @@ class Resource(object):
         If validation fails, an error is raised with the error messages
         serialized inside it.
         """
-        errors = self._meta.validation.is_valid(bundle, request)
+        errors = self._meta.validation.is_valid(bundle, request, **kwargs)
 
         if len(errors):
             if request:
@@ -1087,7 +1087,7 @@ class Resource(object):
             # Attempt to be transactional, deleting any previously created
             # objects if validation fails.
             try:
-                self.is_valid(bundle, request)
+                self.is_valid(bundle, request, **kwargs)
             except ImmediateHttpResponse:
                 self.rollback(bundles_seen)
                 raise
@@ -1125,7 +1125,7 @@ class Resource(object):
         deserialized = self.deserialize(request, request.raw_post_data, format=request.META.get('CONTENT_TYPE', 'application/json'))
         deserialized = self.alter_deserialized_detail_data(request, deserialized)
         bundle = self.build_bundle(data=dict_strip_unicode_keys(deserialized), request=request)
-        self.is_valid(bundle, request)
+        self.is_valid(bundle, request, **kwargs)
 
         try:
             updated_bundle = self.obj_update(bundle, request=request, **self.remove_api_resource_names(kwargs))
@@ -1161,7 +1161,7 @@ class Resource(object):
         deserialized = self.deserialize(request, request.raw_post_data, format=request.META.get('CONTENT_TYPE', 'application/json'))
         deserialized = self.alter_deserialized_detail_data(request, deserialized)
         bundle = self.build_bundle(data=dict_strip_unicode_keys(deserialized), request=request)
-        self.is_valid(bundle, request)
+        self.is_valid(bundle, request, **kwargs)
         updated_bundle = self.obj_create(bundle, request=request, **self.remove_api_resource_names(kwargs))
         location = self.get_resource_uri(updated_bundle)
 
@@ -1280,14 +1280,14 @@ class Resource(object):
                     data = self.alter_deserialized_detail_data(request, data)
                     bundle = self.build_bundle(data=dict_strip_unicode_keys(data))
                     bundle.obj.pk = obj.pk
-                    self.is_valid(bundle, request)
+                    self.is_valid(bundle, request, **kwargs)
                     self.obj_create(bundle, request=request)
             else:
                 # There's no resource URI, so this is a create call just
                 # like a POST to the list resource.
                 data = self.alter_deserialized_detail_data(request, data)
                 bundle = self.build_bundle(data=dict_strip_unicode_keys(data))
-                self.is_valid(bundle, request)
+                self.is_valid(bundle, request, **kwargs)
                 self.obj_create(bundle, request=request)
 
         if len(deserialized.get('deleted_objects', [])) and 'delete' not in self._meta.detail_allowed_methods:

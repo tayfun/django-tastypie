@@ -8,7 +8,7 @@ class Validation(object):
     def __init__(self, **kwargs):
         pass
 
-    def is_valid(self, bundle, request=None):
+    def is_valid(self, bundle, request=None, **kwargs):
         """
         Performs a check on the data within the bundle (and optionally the
         request) to ensure it is valid.
@@ -40,7 +40,7 @@ class FormValidation(Validation):
         self.form_class = kwargs.pop('form_class')
         super(FormValidation, self).__init__(**kwargs)
 
-    def is_valid(self, bundle, request=None):
+    def is_valid(self, bundle, request=None, **kwargs):
         """
         Performs a check on ``bundle.data``to ensure it is valid.
 
@@ -73,7 +73,7 @@ class CleanedDataFormValidation(FormValidation):
     ``Form`` (or ``ModelForm``, though ``save`` will never be called) class.
     This form will be used to validate the data in ``bundle.data``.
     """
-    def is_valid(self, bundle, request=None):
+    def is_valid(self, bundle, request=None, **kwargs):
         """
         Checks ``bundle.data``to ensure it is valid & replaces it with the
         cleaned results.
