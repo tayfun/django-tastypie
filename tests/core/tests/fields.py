@@ -750,7 +750,7 @@ class ToOneFieldTestCase(TestCase):
         field_11 = ToOneField(UserResource, 'author', blank=True)
         field_11.instance_name = 'author'
         fk_bundle = field_11.hydrate(bundle)
-        self.assertEqual(fk_bundle.obj.username, 'johndoe')
+        self.assertEqual(fk_bundle.obj.username, 'mistersmith')
 
         # The readonly case.
         field_12 = ToOneField(UserResource, 'author', readonly=True)
@@ -763,8 +763,8 @@ class ToOneFieldTestCase(TestCase):
         bundle.related_obj = User.objects.get(pk=1)
         bundle.related_name = 'author'
         fk_bundle = field_13.hydrate(bundle)
-        self.assertEqual(fk_bundle.obj.username, u'johndoe')
-        self.assertEqual(fk_bundle.obj.email, u'john@doe.com')
+        self.assertEqual(fk_bundle.obj.username, u'mistersmith')
+        self.assertEqual(fk_bundle.obj.email, u'smith@example.com')
 
     def test_resource_from_uri(self):
         ur = UserResource()

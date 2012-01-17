@@ -525,7 +525,7 @@ class RelatedField(ApiField):
         except ObjectDoesNotExist:
             raise ApiFieldError("Could not find the provided object via resource URI '%s'." % uri)
 
-    def resource_from_data(self, fk_resource, data, request=None, related_obj=None, related_name=None):
+    def resource_from_data(self, fk_resource, data, request=None, related_obj=None, related_name=None, ref_obj_pk=None):
         """
         Given a dictionary-like structure is provided, a fresh related
         resource is created using that data.
@@ -545,7 +545,23 @@ class RelatedField(ApiField):
             return fk_resource.full_hydrate(fk_bundle)
 
         try:
-            return fk_resource.obj_update(fk_bundle, **data)
+            # much ado about nothing? tayfunsen
+            if (ref_obj_pk):
+                # We should already have all the data we need in bundle.data
+                # and so we don't need to send data['pk'] to obj_update.
+                #data['pk'] = ref_obj_pk
+                #return fk_resource.obj_update(fk_bundle, **data)
+                return fk_resource.obj_update(fk_bundle, pk=ref_obj_pk)
+            else:
+                # return fk_resource.full_hydrate(fk_bundle)
+                # raise NotFound()  # tayfunsen. there's no hope.
+                # return fk_resource.obj_update(fk_bundle, **data)
+
+                # return fk_resource.obj_create(fk_bundle)
+                # if there's no ref_obj_pk, we should not create the object
+                # here.
+                #return fk_resource.full_hydrate(fk_bundle)
+                return fk_resource.obj_update(fk_bundle, **data)
         except NotFound:
             try:
                 # Attempt lookup by primary key
@@ -568,7 +584,7 @@ class RelatedField(ApiField):
         bundle = fk_resource.build_bundle(obj=obj, request=request)
         return fk_resource.full_dehydrate(bundle)
 
-    def build_related_resource(self, value, request=None, related_obj=None, related_name=None):
+    def build_related_resource(self, value, request=None, related_obj=None, related_name=None, ref_obj_pk=None):
         """
         Returns a bundle of data built by the related resource, usually via
         ``hydrate`` with the data provided.
@@ -590,6 +606,7 @@ class RelatedField(ApiField):
             # We've got a data dictionary.
             # Since this leads to creation, this is the only one of these
             # methods that might care about "parent" data.
+            kwargs['ref_obj_pk'] = ref_obj_pk
             return self.resource_from_data(self.fk_resource, value, **kwargs)
         elif hasattr(value, 'pk'):
             # We've got an object with a primary key.
@@ -633,12 +650,29 @@ class ToOneField(RelatedField):
         return self.dehydrate_related(fk_bundle, self.fk_resource)
 
     def hydrate(self, bundle):
+        # after the following line, only the related data is in value; it is
+        # extracted from the bundle.
         value = super(ToOneField, self).hydrate(bundle)
 
         if value is None:
             return value
 
-        return self.build_related_resource(value, request=bundle.request)
+        # tayfunsen
+        if bundle.obj:
+            from django.core.exceptions import ObjectDoesNotExist
+            try:
+                ref_obj = getattr(bundle.obj, self.attribute)
+                ref_obj_pk = getattr(ref_obj, 'pk')
+            except (ObjectDoesNotExist, AttributeError):
+                try:
+                    ref_obj_pk = value.get('pk')
+                except (AttributeError, KeyError):
+                    ref_obj_pk = None
+        else:
+            ref_obj_pk = None
+
+        return self.build_related_resource(value, request=bundle.request, ref_obj_pk=ref_obj_pk)
+
 
 class ForeignKey(ToOneField):
     """
