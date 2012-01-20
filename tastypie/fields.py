@@ -553,15 +553,9 @@ class RelatedField(ApiField):
                 #return fk_resource.obj_update(fk_bundle, **data)
                 return fk_resource.obj_update(fk_bundle, pk=ref_obj_pk)
             else:
-                # return fk_resource.full_hydrate(fk_bundle)
-                # raise NotFound()  # tayfunsen. there's no hope.
-                # return fk_resource.obj_update(fk_bundle, **data)
-
-                # return fk_resource.obj_create(fk_bundle)
                 # if there's no ref_obj_pk, we should not create the object
                 # here.
-                #return fk_resource.full_hydrate(fk_bundle)
-                return fk_resource.obj_update(fk_bundle, **data)
+                return fk_resource.full_hydrate(fk_bundle)
         except NotFound:
             try:
                 # Attempt lookup by primary key

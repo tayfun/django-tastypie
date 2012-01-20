@@ -1273,7 +1273,7 @@ class Resource(object):
                     bundle = self.build_bundle(obj=obj, request=request)
                     bundle = self.full_dehydrate(bundle)
                     bundle = self.alter_detail_data_to_serialize(request, bundle)
-                    self.update_in_place(request, bundle, data)
+                    self.update_in_place(request, bundle, data, **kwargs)
                 except (ObjectDoesNotExist, MultipleObjectsReturned):
                     # The object referenced by resource_uri doesn't exist,
                     # so this is a create-by-PUT equivalent.
@@ -1329,10 +1329,10 @@ class Resource(object):
 
         # Now update the bundle in-place.
         deserialized = self.deserialize(request, request.raw_post_data, format=request.META.get('CONTENT_TYPE', 'application/json'))
-        self.update_in_place(request, bundle, deserialized)
+        self.update_in_place(request, bundle, deserialized, **kwargs)
         return http.HttpAccepted()
 
-    def update_in_place(self, request, original_bundle, new_data):
+    def update_in_place(self, request, original_bundle, new_data, **kwargs):
         """
         Update the object in original_bundle in-place using new_data.
         """
@@ -1342,7 +1342,7 @@ class Resource(object):
         # we're basically in the same spot as a PUT request. SO the rest of this
         # function is cribbed from put_detail.
         self.alter_deserialized_detail_data(request, original_bundle.data)
-        self.is_valid(original_bundle, request)
+        self.is_valid(original_bundle, request, **kwargs)
         return self.obj_update(original_bundle, request=request, pk=original_bundle.obj.pk)
 
     def get_schema(self, request, **kwargs):
@@ -1828,6 +1828,7 @@ class ModelResource(Resource):
         self.save_m2m(m2m_bundle)
         return bundle
 
+
     def obj_delete_list(self, request=None, **kwargs):
         """
         A ORM-specific implementation of ``obj_delete_list``.
@@ -1916,6 +1917,8 @@ class ModelResource(Resource):
             # Because sometimes it's ``None`` & that's OK.
             if related_obj:
                 related_obj.save()
+                # have to reassign the saved object to the main object for
+                # saving. tayfunsen
                 setattr(bundle.obj, field_object.attribute, related_obj)
 
     def save_m2m(self, bundle):
