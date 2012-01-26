@@ -648,7 +648,8 @@ class ToOneField(RelatedField):
         # extracted from the bundle.
         value = super(ToOneField, self).hydrate(bundle)
 
-        if value is None:
+        # If there's no value, or if the bundle is already built, return it.
+        if value is None or isinstance(value, Bundle):
             return value
 
         # tayfunsen
