@@ -547,7 +547,7 @@ class Resource(object):
         request_method = request.method.lower()
         self._meta.throttle.accessed(self._meta.authentication.get_identifier(request), url=request.get_full_path(), request_method=request_method)
 
-    def build_bundle(self, obj=None, data=None, request=None):
+    def build_bundle(self, obj=None, data=None, request=None, **kwargs):
         """
         Given either an object, a data dictionary or both, builds a ``Bundle``
         for use throughout the ``dehydrate/hydrate`` cycle.
@@ -1124,7 +1124,7 @@ class Resource(object):
         """
         deserialized = self.deserialize(request, request.raw_post_data, format=request.META.get('CONTENT_TYPE', 'application/json'))
         deserialized = self.alter_deserialized_detail_data(request, deserialized)
-        bundle = self.build_bundle(data=dict_strip_unicode_keys(deserialized), request=request)
+        bundle = self.build_bundle(data=dict_strip_unicode_keys(deserialized), request=request, **kwargs)
         self.is_valid(bundle, request, **kwargs)
 
         try:
