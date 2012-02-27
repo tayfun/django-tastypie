@@ -757,7 +757,7 @@ class ToManyField(RelatedField):
         m2m_hydrated = []
 
         for value in bundle.data.get(self.instance_name):
-            if value is None:
+            if value is None or isinstance(value, Bundle):
                 continue
 
             kwargs = {
